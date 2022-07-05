@@ -19,6 +19,7 @@ export class ComputationService {
         status: 400,
       };
     }
+
     this.setAmount(transaction.Amount);
     // get all flat transaction types
     const FLAT_CALCULATIONS = [];
