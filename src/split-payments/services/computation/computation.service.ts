@@ -21,49 +21,39 @@ export class ComputationService {
     }
     this.setAmount(transaction.Amount);
     // get all flat transaction types
-    const FLAT_TRANSACTION = transaction.SplitInfo.filter(
-      (item) => item.SplitType === 'FLAT',
+    const FLAT_CALCULATIONS = [];
+    transaction.SplitInfo.filter((item) => item.SplitType === 'FLAT').map(
+      (trans) => {
+        this.AMOUNT -= trans.SplitValue;
+        FLAT_CALCULATIONS.push({
+          SplitEntityId: trans.SplitEntityId,
+          Amount: trans.SplitValue,
+        });
+      },
     );
-    const PERCENTAGE_TRANSACTION = transaction.SplitInfo.filter(
-      (item) => item.SplitType === 'PERCENTAGE',
+
+    const PERCENTAGE_CALCULATIONS = [];
+    transaction.SplitInfo.filter((item) => item.SplitType === 'PERCENTAGE').map(
+      (trans) => {
+        const percentage = (trans.SplitValue * this.AMOUNT) / 100;
+        this.AMOUNT -= percentage;
+        PERCENTAGE_CALCULATIONS.push({
+          SplitEntityId: trans.SplitEntityId,
+          Amount: percentage,
+        });
+      },
     );
+
+    let TOTAL_RATIO = 0;
     const RATIO_TRANSACTION = transaction.SplitInfo.filter(
       (item) => item.SplitType === 'RATIO',
-    );
-
-    this.logger.debug({
-      FLAT_TRANSACTION,
-      PERCENTAGE_TRANSACTION,
-      RATIO_TRANSACTION,
+    ).map((ratio) => {
+      TOTAL_RATIO = TOTAL_RATIO + ratio.SplitValue;
+      return ratio;
     });
 
-    // calculate flat transactions
-    const FLAT_CALCULATIONS = [];
-    for (const trans of FLAT_TRANSACTION) {
-      this.AMOUNT -= trans.SplitValue;
-      FLAT_CALCULATIONS.push({
-        SplitEntityId: trans.SplitEntityId,
-        Amount: trans.SplitValue,
-      });
-    }
-
-    // calculate percentage transactions
-    const PERCENTAGE_CALCULATIONS = [];
-    for (const trans of PERCENTAGE_TRANSACTION) {
-      const percentage = (trans.SplitValue * this.AMOUNT) / 100;
-      this.AMOUNT -= percentage;
-      PERCENTAGE_CALCULATIONS.push({
-        SplitEntityId: trans.SplitEntityId,
-        Amount: percentage,
-      });
-    }
-
     // ration calculation
-    let TOTAL_RATIO = 0;
     const RATIOS: number[] = [];
-    for (const ratio of RATIO_TRANSACTION) {
-      TOTAL_RATIO = TOTAL_RATIO + ratio.SplitValue;
-    }
 
     // getting ratios
     const RT: Array<{ SplitEntityId: string; Amount: number }> = [];
